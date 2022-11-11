@@ -1,17 +1,11 @@
 import UIKit
 
-// ERROR HANDLING
-/* Você representa erros usando qualquer tipo que adote o protocolo Error. */
 enum PrinterError: Error {
     case outOfPaper
     case noToner
     case onFire
 }
 
-/*
- Use throw para lançar um erro e throws para marcar uma função que pode lançar um erro.
- Se você lançar um erro em uma função, a função retornará imediatamente e o código que chamou a função tratará o erro.
- */
 func send(job: Int, toPrinter printerName: String) throws -> String {
     if printerName == "Não possui toner" {
         throw PrinterError.noToner
@@ -19,57 +13,95 @@ func send(job: Int, toPrinter printerName: String) throws -> String {
     return "Trabalho enviado"
 }
 
-/*
- Existem várias maneiras de lidar com erros.
- Uma maneira é usar do-catch.
- Dentro do bloco do, você marca o código que pode gerar um erro escrevendo try na frente dele.
- Dentro do bloco catch, o erro recebe automaticamente o nome error, a menos que você dê um nome diferente.
- */
+enum VendingMachineError: Error {
+    case invalidSelection
+    case insufficientFunds(coinsNeeded: Int)
+    case outOfStock
+}
+struct Item {
+    var price: Int
+    var count: Int
+}
+class VendingMachine {
+    
+    var inventory = [
+        "Candy Bar": Item(price: 12, count: 7),
+        "Chips": Item(price: 10, count: 4),
+        "Pretzels": Item(price: 7, count: 11)
+    ]
+    
+    var coinsDeposited = 0
+    
+    func vend(itemNamed name: String) throws {
+        guard let item = inventory[name] else {
+            throw VendingMachineError.invalidSelection
+        }
+        
+        guard item.count > 0 else {
+            throw VendingMachineError.outOfStock
+        }
+        
+        guard item.price <= coinsDeposited else {
+            throw VendingMachineError.insufficientFunds(coinsNeeded: item.price - coinsDeposited)
+        }
+        
+        coinsDeposited -= item.price
+        
+        var newItem = item
+        newItem.count -= 1
+        inventory[name] = newItem
+        
+        print("Distribuição \(name)")
+    }
+}
+
 do {
-    let printerResponse = try send(job: 1040, toPrinter: "Folha Pagamento")
-    print(printerResponse) // Prints "Trabalho enviado"
+    let printerResponse = try send(job: 1040, toPrinter: "Folha de Pagamento")
+    print(printerResponse)
 } catch {
     print(error)
 }
 
-/*
- Você pode fornecer vários blocos catch que tratam de erros específicos.
- Você escreve um padrão depois de catch, assim como faz depois de case em um switch.
- */
 do {
-    let printerResponse = try send(job: 1440, toPrinter: "Fotos Praia")
-    print(printerResponse) // Prints "Trabalho enviado"
+    let printerResponse = try send(job: 1040, toPrinter: "Fotos da Praia")
+    print(printerResponse)
 } catch PrinterError.onFire {
-    print("Pegou fogo em tudo.")
+    print("Pegou fogo em tudo bixo")
 } catch let printerError as PrinterError {
-    print("Erro na impressora: \(printerError).")
+    print("Erro na impressora: \(printerError)")
 } catch {
     print(error)
 }
 
-/*
- Outra maneira de lidar com erros é usar try? para converter o resultado em um opcional.
- Se a função lançar um erro, o erro específico será descartado e o resultado será nulo.
- Caso contrário, o resultado é um opcional contendo o valor que a função retornou.
- */
+var vendingMachine = VendingMachine()
+vendingMachine.coinsDeposited = 8
+func nourish(with item: String) throws {
+    do {
+        try vendingMachine.vend(itemNamed: item)
+    } catch is VendingMachineError {
+        print("Não foi possível comprar isso da máquina de venda automática.")
+    }
+}
+do {
+    try nourish(with: "Chips com sabor de beterraba")
+} catch {
+    print("Erro inesperado não relacionado à máquina de venda automática: \(error)")
+}
+
 let printerSuccess = try? send(job: 1884, toPrinter: "Memorando")
 let printerFailure = try? send(job: 1885, toPrinter: "Não possui toner")
 
-/*
- Use defer para escrever um bloco de código que é executado após todos os outros códigos na função, pouco antes do retorno da função.
- O código é executado independentemente de a função gerar um erro.
- Você pode usar o defer para escrever o código de configuração e limpeza um ao lado do outro, mesmo que eles precisem ser executados em momentos diferentes.
- */
 var fridgeIsOpen = false
-let fridgeContent = ["leite", "ovos", "sobras"]
+let fridgeContent = ["leite", "ovo", "sobras"]
 func fridgeContains(_ food: String) -> Bool {
-    fridgeIsOpen = true
+    fridgeIsOpen =  true
+    
     defer {
         fridgeIsOpen = false
     }
-
+    
     let result = fridgeContent.contains(food)
     return result
 }
 fridgeContains("banana")
-print(fridgeIsOpen) // Prints "false"
+print(fridgeIsOpen)

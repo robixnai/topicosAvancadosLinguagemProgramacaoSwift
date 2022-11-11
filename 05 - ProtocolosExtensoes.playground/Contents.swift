@@ -1,59 +1,207 @@
 import UIKit
 
-// PROTOCOLO E EXTENSÕES
-/* Use protocol para declarar um protocolo. */
 protocol ExampleProtocol {
     var simpleDescription: String { get }
     mutating func adjust()
 }
 
-/* Classes, Enuns e Structs podem adotar protocolos. */
-// Class
 class SimpleClass: ExampleProtocol {
-    var simpleDescription: String = "Uma Classe muito simples."
+    var simpleDescription: String = "Uma classe muito simples."
     var anotherProperty: Int = 69105
     func adjust() {
-        simpleDescription += "  Agora 100% ajustado."
+        simpleDescription += " Agora 100% ajustado."
     }
 }
 var a = SimpleClass()
 a.adjust()
 let aDescription = a.simpleDescription
+
 struct SimpleStructure: ExampleProtocol {
-    var simpleDescription: String = "Uma Structs simples"
+    var simpleDescription: String = "Uma struct simples."
     mutating func adjust() {
-        simpleDescription += " (ajustado)"
+        simpleDescription += " (ajustado)."
     }
 }
 var b = SimpleStructure()
 b.adjust()
 let bDescription = b.simpleDescription
 
-/*
- Observe o uso da palavra-chave mutating na declaração de SimpleStructure para marcar um método que modifica a estrutura.
- A declaração de SimpleClass não precisa de nenhum de seus métodos marcados como mutantes porque os métodos em uma classe sempre podem modificar a classe.
- 
- Use a extension para adicionar funcionalidade a um tipo existente, como novos métodos e propriedades computadas.
- Você pode usar uma extensão para adicionar conformidade de protocolo a um tipo declarado em outro lugar ou até mesmo a um tipo que você importou de uma biblioteca ou framework.
- */
-extension Int: ExampleProtocol {
-    var simpleDescription: String {
-        return "O número \(self)"
-    }
-    mutating func adjust() {
-        self += 42
+protocol SomeProtocol {
+    init(someParameter: Int)
+}
+
+class SomeClass: SomeProtocol {
+    required init(someParameter: Int) {
+        // Implementação
     }
 }
-print(7.simpleDescription) // Prints "O número 7"
 
-/*
- Você pode usar um nome de protocolo como qualquer outro tipo nomeado — por exemplo, para criar uma coleção de objetos que tenham tipos diferentes, mas que estejam todos em conformidade com um único protocolo.
- Quando você trabalha com valores cujo tipo é um tipo de protocolo, os métodos fora da definição de protocolo não estão disponíveis.
- */
-let protocolValue: ExampleProtocol = a
-print(protocolValue.simpleDescription) // Prints "Uma Classe muito simples. Agora 100% ajustado."
-//print(protocolValue.anotherProperty)  // Descomentar para ver o erro
-/*
- Mesmo que a variável protocolValue tenha um tipo de tempo de execução de SimpleClass, o compilador o trata como o tipo fornecido de ExampleProtocol.
- Isso significa que você não pode acessar acidentalmente métodos ou propriedades que a classe implementa além de sua conformidade com o protocolo.
- */
+protocol AnotherProtocol {
+    init()
+}
+class SomeSuperClass {
+    init() {
+        // Implementação
+    }
+}
+class SomeSubClass: SomeSuperClass, AnotherProtocol {
+    required override init() {
+        // Implementação
+    }
+}
+
+protocol RandomNumberProtocol {
+    func random() -> Double
+}
+class RandomNumber: RandomNumberProtocol {
+    func random() -> Double {
+        return Double.random(in: 1.0...100.9)
+    }
+}
+class Dice {
+    let sides: Int
+    let generator: RandomNumberProtocol
+    
+    init(sides: Int, generator: RandomNumberProtocol) {
+        self.sides = sides
+        self.generator = generator
+    }
+    
+    func roll() -> Int {
+        return Int(generator.random() * Double(sides)) + 1
+    }
+}
+var ramdom = Dice(sides: 6, generator: RandomNumber())
+for _ in 1...5 {
+    print("O lançamento de dados aleatório é \(ramdom.roll())")
+}
+
+protocol DiceGame {
+    var dice: Dice { get }
+    func play()
+}
+protocol DiceGameDelegate: AnyObject {
+    func gameDidStart(_ game: DiceGame)
+    func game(_ game: DiceGame, didStartNewTurnWithDiceRoll diceRoll: Int)
+    func gameDidEnd(_ game: DiceGame)
+}
+
+class SomeType {
+    var number: Int = 7
+}
+extension SomeType {
+    // Muda ou adiona novas funcionalidades
+}
+
+extension SomeType: ExampleProtocol {
+    
+    var simpleDescription: String {
+        return "O número \(number)"
+    }
+    
+    func adjust() {
+        number += 42
+    }
+}
+var someType = SomeType()
+print(someType.simpleDescription)
+
+extension Double {
+    var km: Double { return self * 1_000.0 }
+    var m: Double { return self }
+    var cm: Double { return self / 100.0}
+    var mm: Double { return self / 1_000.0 }
+    var ft: Double { return self / 3.28084}
+}
+let oneInch = 25.4.mm
+print("Uma polegada é \(oneInch) metros")
+let threeFeet = 3.ft
+print("Três pés sãp \(threeFeet) metros")
+
+struct Size {
+    var width = 0.0, height = 0.0
+}
+struct Point {
+    var x = 0.0, y = 0.0
+}
+struct Rect {
+    var origin = Point()
+    var size = Size()
+}
+let defaultRect = Rect()
+let memberwiseRect = Rect(origin: Point(x: 2.0, y: 2.0), size: Size(width: 5.0, height: 5.0))
+
+extension Rect {
+    init(center: Point, size: Size) {
+        let originX = center.x - (size.width / 2)
+        let originY = center.y - (size.height / 2)
+        self.init(origin: Point(x: originX, y: originY), size: size)
+    }
+}
+let centerRect = Rect(center: Point(x: 4.0, y: 4.0), size: Size(width: 3.0, height: 3.0))
+
+extension Int {
+    func repetitions(task: () -> Void) {
+        for _ in 0..<self {
+            task()
+        }
+    }
+}
+3.repetitions {
+    print("Hello!")
+}
+
+extension Int {
+    mutating func square() {
+        self = self * self
+    }
+}
+var someInt = 3
+someInt.square()
+
+extension Int {
+    subscript(digitIndex: Int) -> Int {
+        var decimalBase = 1
+        for _ in 0..<digitIndex {
+            decimalBase *= 10
+        }
+        return (self / decimalBase) % 10
+    }
+}
+746381295[0]
+746381295[1]
+746381295[2]
+746381295[8]
+
+extension Int {
+    
+    enum Kind {
+        case negative, zero, positive
+    }
+    
+    var kind: Kind {
+        switch self {
+        case 0:
+            return .zero
+        case let x where x > 0:
+            return .positive
+        default:
+            return .negative
+        }
+    }
+}
+
+func printIntegerKinds(_ numbers: [Int]) {
+    for number in numbers {
+        switch number.kind {
+        case .negative:
+            print("- ", terminator: "")
+        case .zero:
+            print("0 ", terminator: "")
+        case .positive:
+            print("+ ", terminator: "")
+        }
+    }
+    print("")
+}
+printIntegerKinds([3, 19, -27, 0, -6, 0, 7])
